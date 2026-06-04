@@ -7,7 +7,7 @@ pub struct Fundraiser {
     pub mint_to_raise: [u8; 32],
     pub amount_to_raise: [u8; 8],
     pub current_amount: [u8; 8],
-    pub time_started: [i8; 8],
+    pub time_started: [u8; 8],
     pub duration: u8,
     pub bump: u8,
 }
@@ -24,13 +24,3 @@ impl Fundraiser {
         Ok(unsafe { &mut *(data.as_mut_ptr() as *mut Self) })
     }
 }
-
-// pub struct Fundraiser {
-//     pub maker: Pubkey,
-//     pub mint_to_raise: Pubkey,
-//     pub amount_to_raise: u64,
-//     pub current_amount: u64,
-//     pub time_started: i64,
-//     pub duration: u8,
-//     pub bump: u8,
-// }

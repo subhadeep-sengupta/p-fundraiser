@@ -4,9 +4,11 @@ use pinocchio::{
     AccountView, Address, ProgramResult, address::declare_id, entrypoint, error::ProgramError,
 };
 
+pub mod constants;
 pub mod instructions;
 pub mod state;
 
+pub use constants::*;
 pub use instructions::*;
 pub use state::*;
 
@@ -29,6 +31,14 @@ pub fn process_instruction(
         FundraiserInstructions::Initialize => {
             instructions::process_initialize_instruction(accounts, data)?
         }
+        FundraiserInstructions::CreateContributor => {
+            instructions::process_create_contributor_instruction(accounts, data)?
+        }
+        FundraiserInstructions::Contribute => {
+            instructions::process_contribute_instruction(accounts, data)?
+        }
+        FundraiserInstructions::Checker => instructions::process_checker_instruction(accounts)?,
+        FundraiserInstructions::Refund => instructions::process_refund_instruction(accounts)?,
     }
 
     Ok(())

@@ -4,11 +4,10 @@ use pinocchio::{
     error::ProgramError,
     sysvars::{Sysvar, clock::Clock, rent::Rent},
 };
-use pinocchio_associated_token_account::instructions::Create;
 use pinocchio_pubkey::derive_address;
 use pinocchio_system::instructions::CreateAccount;
 
-use crate::Fundraiser;
+use crate::{Fundraiser, MIN_AMOUNT_TO_RAISE};
 
 pub fn process_initialize_instruction(
     accounts: &mut [AccountView],
@@ -18,9 +17,9 @@ pub fn process_initialize_instruction(
         maker,
         mint_to_raise,
         fundraiser_account,
-        vault,
-        system_program,
-        token_program,
+        _vault,
+        _system_program,
+        _token_program,
         _associated_token_program @ ..,
     ] = accounts
     else {
@@ -38,6 +37,10 @@ pub fn process_initialize_instruction(
             .try_into()
             .map_err(|_| ProgramError::InvalidInstructionData)?,
     );
+    let mint_decimals = pinocchio_token::state::Mint::from_account_view(mint_to_raise)?;
+    if amount_to_raise < MIN_AMOUNT_TO_RAISE.pow(mint_decimals.decimals() as u32) {
+        return Err(ProgramError::InvalidArgument);
+    }
 
     let seeds: [&[u8]; 3] = [b"fundraiser", maker.address().as_ref(), &[bump]];
 
@@ -69,19 +72,10 @@ pub fn process_initialize_instruction(
     fundraiser_state.maker = *maker.address().as_array();
     fundraiser_state.mint_to_raise = *mint_to_raise.address().as_array();
     fundraiser_state.amount_to_raise = amount_to_raise.to_le_bytes();
-    fundraiser_state.time_started = Clock::get()?.unix_timestamp.to_le_bytes().map(|b| b as i8);
+    fundraiser_state.time_started = Clock::get()?.unix_timestamp.to_le_bytes();
     fundraiser_state.duration = data[9];
     fundraiser_state.current_amount = 0u64.to_le_bytes();
-
-    Create {
-        funding_account: maker,
-        token_program,
-        system_program,
-        mint: mint_to_raise,
-        wallet: fundraiser_account,
-        account: vault,
-    }
-    .invoke()?;
+    fundraiser_state.bump = bump;
 
     Ok(())
 }
